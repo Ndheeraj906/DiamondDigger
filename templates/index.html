@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiamondDigger Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .status-box {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            background-color: #0f172a;
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        input[type="email"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .message {
+            margin-top: 1rem;
+            text-align: center;
+            color: var(--success);
+            font-size: 0.9rem;
+        }
+
+        .trigger-btn {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            margin-top: 1rem;
+        }
+        
+        .trigger-btn:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>DiamondDigger</h1>
+        <p class="subtitle">Weekly Autonomous Stock Analysis</p>
+
+        <div class="status-box">
+            System Status: 🟢 Online & Ready
+        </div>
+
+        <form method="POST" action="/">
+            <div class="form-group">
+                <label for="recipient_email">Recipient Email for Weekly Picks</label>
+                <input type="email" id="recipient_email" name="recipient_email" value="{{ current_email }}" required placeholder="your@email.com">
+            </div>
+            <button type="submit">Update Email</button>
+            {% if message %}
+                <div class="message">{{ message }}</div>
+            {% endif %}
+        </form>
+
+        <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #334155; padding-top: 1.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+                The weekly job endpoint is located at <code>/trigger-weekly</code>.
+            </p>
+            <button type="button" class="trigger-btn" onclick="triggerJob()">Run Manual Analysis Now</button>
+            <div id="trigger-msg" class="message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function triggerJob() {
+            const btn = document.querySelector('.trigger-btn');
+            const msg = document.getElementById('trigger-msg');
+            
+            btn.disabled = true;
+            btn.innerText = 'Analyzing Market... (Please wait)';
+            msg.style.display = 'none';
+
+            fetch('/trigger-weekly')
+                .then(response => response.json())
+                .then(data => {
+                    msg.style.display = 'block';
+                    if(data.status === 'success') {
+                        msg.style.color = 'var(--success)';
+                        msg.innerText = 'Success: ' + data.message;
+                    } else {
+                        msg.style.color = '#ef4444';
+                        msg.innerText = 'Error: ' + data.message;
+                    }
+                })
+                .catch(err => {
+                    msg.style.display = 'block';
+                    msg.style.color = '#ef4444';
+                    msg.innerText = 'Failed to trigger job.';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = 'Run Manual Analysis Now';
+                });
+        }
+    </script>
+</body>
+</html>

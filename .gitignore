@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+run_local.bat
+config.json
+.env
+.idea/
+.vscode/
