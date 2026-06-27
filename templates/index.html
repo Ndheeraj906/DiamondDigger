@@ -165,7 +165,7 @@
             btn.innerText = 'Analyzing Market... (Please wait)';
             msg.style.display = 'none';
 
-            fetch('/trigger-weekly')
+            fetch('/trigger-weekly', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     msg.style.display = 'block';
