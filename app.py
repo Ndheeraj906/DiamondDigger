@@ -1,11 +1,8 @@
 import os
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-import smtplib
 import json
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from flask import Flask, render_template, request, jsonify
 
 
@@ -65,25 +62,28 @@ def trigger_weekly():
     try:
         email_html_content = generate_analysis_html()
         
-        sender_email = os.environ.get('SENDER_EMAIL')
-        app_password = os.environ.get('APP_PASSWORD')
-        
-        if not sender_email or not app_password:
-            raise ValueError("SENDER_EMAIL or APP_PASSWORD not configured.")
-
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Weekly DiamondDigger Stock Pick'
-        msg['From'] = sender_email
-        msg['To'] = target_email
-        
-        part = MIMEText(email_html_content, 'html')
-        msg.attach(part)
-        
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(sender_email, app_password)
-            server.send_message(msg)
+        resend_api_key = os.environ.get('RESEND_API_KEY')
+        if not resend_api_key:
+            raise ValueError("RESEND_API_KEY not configured.")
             
-        print(f"Successfully sent analysis to {target_email}!")
+        headers = {
+            'Authorization': f'Bearer {resend_api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            "from": "onboarding@resend.dev",
+            "to": target_email,
+            "subject": "Weekly DiamondDigger Stock Pick",
+            "html": email_html_content
+        }
+        
+        response = requests.post('https://api.resend.com/emails', headers=headers, json=payload)
+        
+        if response.status_code not in (200, 201):
+            raise Exception(f"Resend API Error: {response.text}")
+            
+        print(f"Successfully sent analysis to {target_email} via Resend!")
     except Exception as e:
         print(f"Error during analysis generation: {str(e)}")
         raise e
