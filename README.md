@@ -1,5 +1,7 @@
 # 💎 DiamondDigger for Dheeraj
 
+**Live Application:** [https://diamonddigger.onrender.com](https://diamonddigger.onrender.com)
+
 **DiamondDigger** is a fully autonomous, AI-driven financial analytics engine built exclusively for Dheeraj. 
 
 ### 🚀 How It Works
