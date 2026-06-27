@@ -136,20 +136,14 @@
             System Status: 🟢 Online & Ready
         </div>
 
-        <form method="POST" action="/">
-            <div class="form-group">
-                <label for="recipient_email">Recipient Email for Weekly Picks</label>
-                <input type="email" id="recipient_email" name="recipient_email" value="{{ current_email }}" required placeholder="your@email.com">
-            </div>
-            <button type="submit">Update Email</button>
-            {% if message %}
-                <div class="message">{{ message }}</div>
-            {% endif %}
-        </form>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label for="test_email" style="text-align:center;">Want to test it? Enter your email below:</label>
+            <input type="email" id="test_email" placeholder="Enter your email to receive a test analysis">
+        </div>
 
         <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #334155; padding-top: 1.5rem;">
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-                The weekly job endpoint is located at <code>/trigger-weekly</code>.
+                The weekly cron job is permanently locked to Dheeraj.
             </p>
             <button type="button" class="trigger-btn" onclick="triggerJob()">Run Manual Analysis Now</button>
             <div id="trigger-msg" class="message" style="display: none;"></div>
@@ -165,7 +159,13 @@
             btn.innerText = 'Analyzing Market... (Please wait)';
             msg.style.display = 'none';
 
-            fetch('/trigger-weekly', { method: 'POST' })
+            const testEmail = document.getElementById('test_email').value;
+
+            fetch('/trigger-manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: testEmail })
+            })
                 .then(response => response.json())
                 .then(data => {
                     msg.style.display = 'block';
