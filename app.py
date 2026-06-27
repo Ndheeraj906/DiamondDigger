@@ -15,12 +15,8 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-def trigger_analysis(target_email):
-    """Core function to run analysis and send email to a specific address."""
-    if not target_email:
-        raise ValueError("No recipient email provided.")
-    
-    # 1. Initialize Groq
+def generate_analysis_html():
+    """Generates the AI stock analysis and returns the HTML string."""
     api_key = os.environ.get('GROQ_API_KEY')
     if not api_key:
         raise ValueError("GROQ_API_KEY not configured.")
@@ -57,27 +53,40 @@ Use inline CSS, a dark-mode scheme, and include: Stock Name & Ticker, Price (und
     )
     email_html_content = response.choices[0].message.content
     email_html_content = email_html_content.replace('```html', '').replace('```', '')
+    return email_html_content
     
-    # 2. Send Email
-    sender_email = os.environ.get('SENDER_EMAIL')
-    app_password = os.environ.get('APP_PASSWORD')
-    
-    if not sender_email or not app_password:
-        raise ValueError("SENDER_EMAIL or APP_PASSWORD not configured.")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Weekly DiamondDigger Stock Pick'
-    msg['From'] = sender_email
-    msg['To'] = target_email
-    
-    part = MIMEText(email_html_content, 'html')
-    msg.attach(part)
-    
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(sender_email, app_password)
-        server.send_message(msg)
+def trigger_weekly():
+    """Wrapper for the Monday background job. Sends email via SMTP."""
+    target_email = os.environ.get('RECIPIENT_EMAIL')
+    if not target_email:
+        return
         
-    print(f"Successfully sent analysis to {target_email}!")
+    print(f"Starting Monday cron job for {target_email}...")
+    try:
+        email_html_content = generate_analysis_html()
+        
+        sender_email = os.environ.get('SENDER_EMAIL')
+        app_password = os.environ.get('APP_PASSWORD')
+        
+        if not sender_email or not app_password:
+            raise ValueError("SENDER_EMAIL or APP_PASSWORD not configured.")
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Weekly DiamondDigger Stock Pick'
+        msg['From'] = sender_email
+        msg['To'] = target_email
+        
+        part = MIMEText(email_html_content, 'html')
+        msg.attach(part)
+        
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, app_password)
+            server.send_message(msg)
+            
+        print(f"Successfully sent analysis to {target_email}!")
+    except Exception as e:
+        print(f"Error during analysis generation: {str(e)}")
+        raise e
 
 def get_market_context():
     tickers = {
@@ -104,23 +113,12 @@ def get_market_context():
             context += f"- {name} ({ticker}): Error fetching\n"
     return context
 
-def trigger_weekly():
-    """Wrapper for the Monday background job, exclusively uses Dheeraj's email."""
-    target_email = os.environ.get('RECIPIENT_EMAIL')
-    if target_email:
-        print(f"Starting Monday cron job for {target_email}...")
-        try:
-            trigger_analysis(target_email)
-        except Exception as e:
-            print(f"Monday job failed: {e}")
-
 @app.route('/trigger-manual', methods=['POST'])
 def trigger_manual():
+    """Endpoint for the public website. Returns HTML directly."""
     try:
-        data = request.get_json() or {}
-        target_email = data.get('email') or os.environ.get('RECIPIENT_EMAIL')
-        trigger_analysis(target_email)
-        return jsonify({'status': 'success', 'message': f'Analysis sent to {target_email}!'})
+        html_content = generate_analysis_html()
+        return jsonify({'status': 'success', 'html': html_content})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 

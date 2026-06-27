@@ -136,9 +136,10 @@
             System Status: 🟢 Online & Ready
         </div>
 
-        <div class="form-group" style="margin-top: 1rem;">
-            <label for="test_email" style="text-align:center;">Want to test it? Enter your email below:</label>
-            <input type="email" id="test_email" placeholder="Enter your email to receive a test analysis">
+        <div class="form-group" style="margin-top: 1rem; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+                Click below to instantly generate a live AI stock analysis on this screen.
+            </p>
         </div>
 
         <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #334155; padding-top: 1.5rem;">
@@ -146,7 +147,10 @@
                 The weekly cron job is permanently locked to Dheeraj.
             </p>
             <button type="button" class="trigger-btn" onclick="triggerJob()">Run Manual Analysis Now</button>
-            <div id="trigger-msg" class="message" style="display: none;"></div>
+            <div id="trigger-msg" class="message" style="display: none; margin-bottom: 1rem;"></div>
+            <div id="analysis-result" style="display: none; text-align: left; background-color: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155; margin-top: 1.5rem; max-height: 400px; overflow-y: auto;">
+                <!-- HTML will be injected here -->
+            </div>
         </div>
     </div>
 
@@ -155,23 +159,26 @@
             const btn = document.querySelector('.trigger-btn');
             const msg = document.getElementById('trigger-msg');
             
+            const resultDiv = document.getElementById('analysis-result');
+            
             btn.disabled = true;
-            btn.innerText = 'Analyzing Market... (Please wait)';
-            msg.style.display = 'none';
-
-            const testEmail = document.getElementById('test_email').value;
+            btn.innerText = 'Analyzing Market... (Takes ~1-2 Minutes)';
+            msg.style.display = 'block';
+            msg.style.color = 'var(--text-muted)';
+            msg.innerText = 'Fetching 10 live stocks & querying AI...';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
 
             fetch('/trigger-manual', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: testEmail })
+                headers: { 'Content-Type': 'application/json' }
             })
                 .then(response => response.json())
                 .then(data => {
-                    msg.style.display = 'block';
                     if(data.status === 'success') {
-                        msg.style.color = 'var(--success)';
-                        msg.innerText = 'Success: ' + data.message;
+                        msg.style.display = 'none';
+                        resultDiv.style.display = 'block';
+                        resultDiv.innerHTML = data.html;
                     } else {
                         msg.style.color = '#ef4444';
                         msg.innerText = 'Error: ' + data.message;
