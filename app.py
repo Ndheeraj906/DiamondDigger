@@ -2,7 +2,6 @@ import os
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 import json
 import requests
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, jsonify
 
 
@@ -122,11 +121,8 @@ def trigger_manual():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Initialize Scheduler (placed here so Gunicorn picks it up on Render)
-scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
-# Run every Monday at 8:30 AM
-scheduler.add_job(func=trigger_weekly, trigger="cron", day_of_week='mon', hour=8, minute=30)
-scheduler.start()
+# The email scheduler has been moved to cron.py 
+# to be run by an external Cron Job (e.g., Render Cron Jobs).
 
 if __name__ == '__main__':
     # Run Flask app locally
