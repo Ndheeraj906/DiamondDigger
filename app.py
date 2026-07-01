@@ -121,6 +121,22 @@ def trigger_manual():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/cron/send-weekly', methods=['GET', 'POST'])
+def cron_send_weekly():
+    """Hidden endpoint to trigger weekly emails via external cron service."""
+    # Check for a secret key to prevent random people from triggering emails
+    secret_key = request.args.get('key') or request.headers.get('Authorization')
+    expected_key = os.environ.get('CRON_SECRET_KEY')
+    
+    if not expected_key or secret_key != expected_key:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+        
+    try:
+        trigger_weekly()
+        return jsonify({'status': 'success', 'message': 'Weekly email triggered'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # The email scheduler has been moved to cron.py 
 # to be run by an external Cron Job (e.g., Render Cron Jobs).
 
